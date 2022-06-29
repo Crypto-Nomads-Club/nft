@@ -17,8 +17,10 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
     uint256 public constant PRICE = 0.3 ether;
     uint256 public constant MAX_PER_MINT = 5;
 
-    uint256 public publicAmount;
     bool public saleLive;
+
+    uint256 public giftedAmount;
+    uint256 public publicAmount;
 
     constructor() ERC721("Crypto Nomads Club", "CNC") {}
 
@@ -30,21 +32,8 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
         return publicAmount == PUBLIC_TOKENS;
     }
 
-    // function mintNFT(address recipient, string memory tokenURI)
-    //     public
-    //     onlyOwner
-    //     returns (uint256)
-    // {
-    //     _tokenIds.increment();
-
-    //     uint256 newItemId = _tokenIds.current();
-    //     _mint(recipient, newItemId);
-    //     _setTokenURI(newItemId, tokenURI);
-
-    //     return newItemId;
-    // }
-
-    function mintCNC(uint256 amount) external payable {
+// needs a list of cities we are giving the receiver
+    function mintCNC(address calldata receiver, <type>[] cities) external payable {
         require(saleLive, "Sale is not active");
         require(totalSupply() < MAX_TOKENS, "Sold out");
         require(
@@ -54,31 +43,31 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
         require(amount > 0 && amount <= MAX_PER_MINT, "Invalid amount");
         require(PRICE * amount <= msg.value, "Insufficient ETH");
 
-        for (uint256 i = 0; i < amount; i++) {
+        for (uint256 i = 0; i < cities.length; i++) {
             publicAmount++;
-            _safeMint(msg.sender, totalSupply() + 1);
-        }
-
-        if (startingIndexBlock == 0 && (allPublicMinted() || revealed)) {
-            startingIndexBlock = block.number;
+            _safeMint(receiver, cities[i]);
+            // msg.sender?
         }
     }
 
-    function gift(address[] calldata receivers) external onlyOwner {
+// needs a receiver 
+// needs a list of cities we are giving the receiver
+// should we store a list of gifted addresses such that we know who is soulbound or not OR should there be a unique token ID?
+    function gift(address calldata receiver, <type>[] cities) external onlyOwner {
         require(totalSupply() < MAX_TOKENS, "Sold out");
         require(
-            giftedAmount + receivers.length <= GIFT_TOKENS,
+            giftedAmount + cities.length <= GIFT_TOKENS,
             "Run out of gift tokens"
         );
 
-        for (uint256 i = 0; i < receivers.length; i++) {
+        for (uint256 i = 0; i < cities.length; i++) {
             giftedAmount++;
-            _mint(receivers[i], totalSupply() + 1);
+            _mint(receiver, cities[i]);
         }
     }
 
     // Overriding transfer hook to check for soulbound
-
+    
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -86,7 +75,7 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
     ) internal override(ERC721) {
         // TODO: should this be based on a unique tokenID?
         // if sender is a 0 address, this is a mint transaction, not a transfer
-        require(from == address(0), "ERR: TOKEN IS SOUL BOUND");
+        require(from == address(0), "ERROR: TOKEN IS SOUL BOUND");
         super._beforeTokenTransfer(from, to, tokenId);
     }
 }
