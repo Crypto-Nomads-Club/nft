@@ -17,12 +17,17 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
     uint256 public constant PRICE = 0.3 ether;
     uint256 public constant MAX_PER_MINT = 5;
 
+    uint256 public publicAmount;
     bool public saleLive;
 
     constructor() ERC721("Crypto Nomads Club", "CNC") {}
 
     function toggleSaleStatus() external onlyOwner {
         saleLive = !saleLive;
+    }
+
+    function allPublicMinted() public view returns (bool) {
+        return publicAmount == PUBLIC_TOKENS;
     }
 
     // function mintNFT(address recipient, string memory tokenURI)
@@ -48,6 +53,15 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
         );
         require(amount > 0 && amount <= MAX_PER_MINT, "Invalid amount");
         require(PRICE * amount <= msg.value, "Insufficient ETH");
+
+        for (uint256 i = 0; i < amount; i++) {
+            publicAmount++;
+            _safeMint(msg.sender, totalSupply() + 1);
+        }
+
+        if (startingIndexBlock == 0 && (allPublicMinted() || revealed)) {
+            startingIndexBlock = block.number;
+        }
     }
 
     function gift(address[] calldata receivers) external onlyOwner {
@@ -59,7 +73,20 @@ contract CryptoNomadsClub is ERC721Enumerable, Ownable {
 
         for (uint256 i = 0; i < receivers.length; i++) {
             giftedAmount++;
-            _safeMint(receivers[i], totalSupply() + 1);
+            _mint(receivers[i], totalSupply() + 1);
         }
+    }
+
+    // Overriding transfer hook to check for soulbound
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721) {
+        // TODO: should this be based on a unique tokenID?
+        // if sender is a 0 address, this is a mint transaction, not a transfer
+        require(from == address(0), "ERR: TOKEN IS SOUL BOUND");
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 }
