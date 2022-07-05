@@ -514,15 +514,36 @@ describe('Crypto Nomads Club Token Tests', async function () {
       );
     });
     it('cannot be called as a non-owner', async function () {
-      const [owner, address1] = await ethers.getSigners();
-      let e = undefined;
-      try {
-        await cncInstance.connect(address1).withdrawAll();
-      } catch (error) {
-        e = error;
-      }
-      expect(e.reason).to.equal(
-        "Error: VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'"
+      const [owner, minter] = await ethers.getSigners();
+
+      const ownerConnection = await cncInstance.connect(owner);
+      const minterConnection = await cncInstance.connect(minter);
+
+      const originalBalance = await cncInstance.provider.getBalance(
+        owner.address
+      );
+
+      const setSaleBatchTx = await ownerConnection.setSaleBatch(
+        2899,
+        ethers.utils.parseEther('1'),
+        constants.ZERO_ADDRESS
+      );
+      await setSaleBatchTx.wait();
+
+      const mintTx = await minterConnection.mint(['AMSTERDAM'], {
+        value: ethers.utils.parseEther('1'),
+      });
+      await mintTx.wait();
+
+      const withdrawTx = await minterConnection.withdrawAll();
+      await withdrawTx.wait();
+
+      const newBalance = await cncInstance.provider.getBalance(owner.address);
+
+      expect(newBalance.div(ethers.utils.parseEther('1'))).to.equal(
+        originalBalance
+          .add(ethers.utils.parseEther('1'))
+          .div(ethers.utils.parseEther('1'))
       );
     });
   });

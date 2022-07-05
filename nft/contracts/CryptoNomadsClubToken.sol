@@ -105,8 +105,8 @@ contract CryptoNomadsClub is
         soulBoundCounter++;
     }
 
-    function withdrawAll() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+    function withdrawAll() external {
+        payable(owner()).transfer(address(this).balance);
     }
 
     function setDefaultRoyalty(address _receiver, uint96 _feeNumerator)
