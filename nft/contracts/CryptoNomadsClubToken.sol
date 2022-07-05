@@ -4,10 +4,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CryptoNomadsClub is
     ERC721,
+    ERC2981,
     ERC721Enumerable,
     ERC721URIStorage,
     Ownable
@@ -22,6 +24,7 @@ contract CryptoNomadsClub is
 
     uint256 public availableToMint;
     uint256 public price;
+    address public allowList;
 
     mapping(string => bool) public CITIES;
 
@@ -46,28 +49,37 @@ contract CryptoNomadsClub is
         CITIES["SINGAPORE"] = true;
     }
 
-    function setBatch(
-        // params can be a struct
+    function setSaleBatch(
         uint256 batchSize,
-        uint256 batchPrice
+        uint256 batchPrice,
+        address batchAllowList
     ) external onlyOwner {
         availableToMint = batchSize;
         price = batchPrice;
+        allowList = batchAllowList;
     }
 
     function mint(string[] memory cities) external payable {
-        require(availableToMint >= cities.length, "Batch sold out");
+        require(
+            availableToMint >= cities.length,
+            "Not enough available to mint"
+        );
         require(totalSupply() < MAX_TOKENS, "Sold out");
         require(publicAmount < 2900, "All public tokens sold out");
         require(
             cities.length > 0 && cities.length <= 5,
-            "Invalid amount of cities"
+            "Invalid amount of cities selected"
         );
         require(
             publicAmount + cities.length <= 2900,
             "Not enough public tokens available"
         );
         require(price * cities.length <= msg.value, "Insufficient ETH");
+        require(
+            allowList == address(0) ||
+                ERC721(allowList).balanceOf(msg.sender) > 0,
+            "Requires allow list NFT"
+        );
 
         for (uint256 i = 0; i < cities.length; i++) {
             require(CITIES[cities[i]], "Invalid city");
@@ -84,7 +96,7 @@ contract CryptoNomadsClub is
 
     function gift(address receiver, string memory city) external onlyOwner {
         require(totalSupply() < MAX_TOKENS, "Sold out");
-        require(soulBoundCounter <= 3000, "Run out of soul bound tokens");
+        require(soulBoundCounter < 3000, "Run out of soul bound tokens");
         require(CITIES[city], "Invalid city");
 
         _mint(receiver, soulBoundCounter);
@@ -95,6 +107,13 @@ contract CryptoNomadsClub is
 
     function withdrawAll() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function setDefaultRoyalty(address _receiver, uint96 _feeNumerator)
+        external
+        onlyOwner
+    {
+        _setDefaultRoyalty(_receiver, _feeNumerator);
     }
 
     // Overriding _baseURI
@@ -139,7 +158,7 @@ contract CryptoNomadsClub is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721, ERC721Enumerable, ERC2981)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
