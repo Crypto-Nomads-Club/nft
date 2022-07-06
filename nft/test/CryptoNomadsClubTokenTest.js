@@ -1,6 +1,11 @@
 const { expect, assert } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, waffle } = require('hardhat');
 const { constants } = require('@openzeppelin/test-helpers');
+
+const IERC721 = require('../artifacts/@openzeppelin/contracts/token/ERC721/IERC721.sol/IERC721.json');
+
+// Note: Running all the tests currently takes 10+ minutes due to the minting loops involved
+// To speed up testing, we should change the minting loop implementation to waffle mocks
 
 describe('Crypto Nomads Club Token Tests', async function () {
   beforeEach(async function () {
@@ -61,6 +66,36 @@ describe('Crypto Nomads Club Token Tests', async function () {
       expect(await cncInstance.balanceOf(minter.address)).to.equal(1);
       expect(originalAvailableToMint).to.equal(newAvailableToMint.add(1));
     });
+
+    it('can mint if allowList address is set and sender has a balance', async function () {
+      const [owner, minter] = await ethers.getSigners();
+
+      const mockERC721 = await waffle.deployMockContract(minter, IERC721.abi);
+      await mockERC721.mock.balanceOf.returns(1);
+
+      const ownerConnection = await cncInstance.connect(owner);
+      const minterConnection = await cncInstance.connect(minter);
+
+      const setSaleBatchTx = await ownerConnection.setSaleBatch(
+        3,
+        ethers.utils.parseEther('1'),
+        mockERC721.address
+      );
+      await setSaleBatchTx.wait();
+
+      const originalAvailableToMint = await cncInstance.availableToMint();
+
+      const mintTx = await minterConnection.mint(['AUSTIN'], {
+        value: ethers.utils.parseEther('1'),
+      });
+      await mintTx.wait();
+
+      const newAvailableToMint = await cncInstance.availableToMint();
+
+      expect(await cncInstance.balanceOf(minter.address)).to.equal(1);
+      expect(originalAvailableToMint).to.equal(newAvailableToMint.add(1));
+    });
+
     it('can mint multiple cities', async function () {
       const [owner, minter] = await ethers.getSigners();
 
@@ -377,7 +412,34 @@ describe('Crypto Nomads Club Token Tests', async function () {
       );
     });
 
-    it('cannot mint if allow list is set and sender balance is 0', async function () {});
+    it('cannot mint if allow list is set and sender has no balance', async function () {
+      const [owner, minter] = await ethers.getSigners();
+
+      const mockERC721 = await waffle.deployMockContract(minter, IERC721.abi);
+      await mockERC721.mock.balanceOf.returns(0);
+
+      const ownerConnection = await cncInstance.connect(owner);
+      const minterConnection = await cncInstance.connect(minter);
+
+      const setSaleBatchTx = await ownerConnection.setSaleBatch(
+        3,
+        ethers.utils.parseEther('1'),
+        mockERC721.address
+      );
+      await setSaleBatchTx.wait();
+
+      try {
+        await minterConnection.mint(['AUSTIN'], {
+          value: ethers.utils.parseEther('1'),
+        });
+      } catch (error) {
+        e = error;
+      }
+
+      expect(e.reason).to.equal(
+        "Error: VM Exception while processing transaction: reverted with reason string 'Requires allow list NFT'"
+      );
+    });
   });
 
   describe('gift', function () {
