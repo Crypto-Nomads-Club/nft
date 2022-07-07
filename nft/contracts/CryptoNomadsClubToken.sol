@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CryptoNomadsClub is
     ERC721,
     ERC2981,
     ERC721Enumerable,
     ERC721URIStorage,
-    Ownable
+    Ownable,
+    ReentrancyGuard
 {
     uint256 private constant MAX_TOKENS = 3000;
 
@@ -59,7 +61,7 @@ contract CryptoNomadsClub is
         allowList = batchAllowList;
     }
 
-    function mint(string[] memory cities) external payable {
+    function mint(string[] memory cities) external payable nonReentrant {
         require(
             availableToMint >= cities.length,
             "Not enough available to mint"
@@ -87,7 +89,7 @@ contract CryptoNomadsClub is
             string memory finalTokenURI = string(
                 abi.encodePacked(cities[i], ".json")
             );
-            _setTokenURI(publicAmount, finalTokenURI);
+            _setTokenURI(publicAmount + i, finalTokenURI);
         }
 
         publicAmount += cities.length;
@@ -125,7 +127,7 @@ contract CryptoNomadsClub is
         override(ERC721)
         returns (string memory)
     {
-        return "ipfs://QmRgvuYv5Y4qjQfXz7KshzQpSne1kM5dP4jAWuFyyTzZGH";
+        return "ipfs://QmRgvuYv5Y4qjQfXz7KshzQpSne1kM5dP4jAWuFyyTzZGH/";
     }
 
     // Overriding transfer hook to check for soulbound
