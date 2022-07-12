@@ -305,12 +305,9 @@ describe('Crypto Nomads Club Token Tests', async function () {
       }
 
       try {
-        await minterConnection.mint(
-          ['SINGAPORE', 'BALI', 'AUSTIN', 'DENVER', 'LONDON'],
-          {
-            value: ethers.utils.parseEther('5'),
-          }
-        );
+        await minterConnection.mint(['SINGAPORE', 'BALI', 'AUSTIN', 'DENVER'], {
+          value: ethers.utils.parseEther('4'),
+        });
       } catch (error) {
         e = error;
       }

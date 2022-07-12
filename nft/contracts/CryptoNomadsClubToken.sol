@@ -66,14 +66,12 @@ contract CryptoNomadsClub is
             availableToMint >= cities.length,
             "Not enough available to mint"
         );
-        require(totalSupply() < MAX_TOKENS, "Sold out");
-        require(publicAmount < 2900, "All public tokens sold out");
         require(
             cities.length > 0 && cities.length <= 5,
             "Invalid amount of cities selected"
         );
         require(
-            publicAmount + cities.length <= 2900,
+            publicAmount + cities.length < 2900,
             "Not enough public tokens available"
         );
         require(price * cities.length <= msg.value, "Insufficient ETH");
@@ -97,7 +95,6 @@ contract CryptoNomadsClub is
     }
 
     function gift(address receiver, string memory city) external onlyOwner {
-        require(totalSupply() < MAX_TOKENS, "Sold out");
         require(soulBoundCounter < 3000, "Run out of soul bound tokens");
         require(CITIES[city], "Invalid city");
 
