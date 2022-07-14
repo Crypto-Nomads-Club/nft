@@ -257,14 +257,14 @@ describe('Crypto Nomads Club Token Tests', async function () {
       const minterConnection = await cncInstance.connect(minter);
 
       const setSaleBatchTx = await ownerConnection.setSaleBatch(
-        3001,
+        2900,
         ethers.utils.parseEther('1'),
         constants.ZERO_ADDRESS
       );
       await setSaleBatchTx.wait();
 
       // mint all mintable tokens
-      for (let i = 0; i < 2900; i++) {
+      for (let i = 0; i < 2899; i++) {
         const mintTx = await minterConnection.mint(['AMSTERDAM'], {
           value: ethers.utils.parseEther('1'),
         });
@@ -279,9 +279,9 @@ describe('Crypto Nomads Club Token Tests', async function () {
         e = error;
       }
 
-      expect(await cncInstance.balanceOf(minter.address)).to.equal(2900);
+      expect(await cncInstance.balanceOf(minter.address)).to.equal(2899);
       expect(e.reason).to.equal(
-        "Error: VM Exception while processing transaction: reverted with reason string 'All public tokens sold out'"
+        "Error: VM Exception while processing transaction: reverted with reason string 'Not enough public tokens available'"
       );
     });
 
@@ -323,14 +323,14 @@ describe('Crypto Nomads Club Token Tests', async function () {
       const minterConnection = await cncInstance.connect(minter);
 
       const setSaleBatchTx = await ownerConnection.setSaleBatch(
-        3001,
+        2900,
         ethers.utils.parseEther('1'),
         constants.ZERO_ADDRESS
       );
       await setSaleBatchTx.wait();
 
       // mint all mintable tokens
-      for (let i = 0; i < 2900; i++) {
+      for (let i = 0; i < 2899; i++) {
         const mintTx = await minterConnection.mint(['AMSTERDAM'], {
           value: ethers.utils.parseEther('1'),
         });
@@ -351,9 +351,9 @@ describe('Crypto Nomads Club Token Tests', async function () {
         e = error;
       }
 
-      expect(await cncInstance.balanceOf(minter.address)).to.equal(3000);
+      expect(await cncInstance.balanceOf(minter.address)).to.equal(2999);
       expect(e.reason).to.equal(
-        "Error: VM Exception while processing transaction: reverted with reason string 'Sold out'"
+        "Error: VM Exception while processing transaction: reverted with reason string 'Not enough public tokens available'"
       );
     });
 
@@ -461,7 +461,7 @@ describe('Crypto Nomads Club Token Tests', async function () {
       await setSaleBatchTx.wait();
 
       // mint all mintable tokens
-      for (let i = 0; i < 2900; i++) {
+      for (let i = 0; i < 2899; i++) {
         const mintTx = await minterConnection.mint(['AMSTERDAM'], {
           value: ethers.utils.parseEther('1'),
         });
@@ -480,9 +480,9 @@ describe('Crypto Nomads Club Token Tests', async function () {
         e = error;
       }
 
-      expect(await cncInstance.balanceOf(minter.address)).to.equal(3000);
+      expect(await cncInstance.balanceOf(minter.address)).to.equal(2999);
       expect(e.reason).to.equal(
-        "Error: VM Exception while processing transaction: reverted with reason string 'Sold out'"
+        "Error: VM Exception while processing transaction: reverted with reason string 'Run out of soul bound tokens'"
       );
     });
 
